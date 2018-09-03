@@ -4,7 +4,7 @@ import com.siwoo.toby.entity.User;
 import java.sql.*;
 
 public class UserDao {
-    private static final String MYSQL_URL = "jdbc:mysql://localhost/toby?characterEncoding=UTF-8&serverTimezone=UTC";
+    private static final String MYSQL_URL = "jdbc:mysql://localhost/toby?characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false";
     public static final String USER_NAME = "toby";
     public static final String PASSWORD = "1234";
     public static final String DRIVER_NAME = "com.mysql.cj.jdbc.Driver";
@@ -16,6 +16,8 @@ public class UserDao {
 
     public static void main(String[] args) throws SQLException, ClassNotFoundException {
         UserDao userDao = new UserDao();
+        userDao.delete();
+
         User user1 = new User();
         String user1Id = "sm123tt";
         user1.setId(user1Id);
@@ -35,9 +37,19 @@ public class UserDao {
         System.out.println(user2);
     }
 
-    public void add(User user) throws ClassNotFoundException, SQLException {
+    private Connection getConnection() throws SQLException, ClassNotFoundException {
         Class.forName(DRIVER_NAME);
-        try(Connection connection = DriverManager.getConnection(MYSQL_URL, USER_NAME, PASSWORD);
+        return DriverManager.getConnection(MYSQL_URL, USER_NAME, PASSWORD);
+    }
+    public void delete() throws ClassNotFoundException, SQLException {
+        try(Connection connection = getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM USERS")) {
+            preparedStatement.executeUpdate();
+        }
+    }
+
+    public void add(User user) throws ClassNotFoundException, SQLException {
+        try(Connection connection = getConnection();
         PreparedStatement preparedStatement = connection.prepareStatement(SQL_INSERT)) {
             preparedStatement.setString(1, user.getId());
             preparedStatement.setString(2, user.getName());
@@ -49,7 +61,7 @@ public class UserDao {
     public User get(String id) throws ClassNotFoundException, SQLException {
         Class.forName(DRIVER_NAME);
         User user = new User();
-        try(Connection connection = DriverManager.getConnection(MYSQL_URL, USER_NAME, PASSWORD);
+        try(Connection connection = getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(SQL_SELECT_BY_ID)) {
             preparedStatement.setString(1, id);
             ResultSet resultSet = preparedStatement.executeQuery();
